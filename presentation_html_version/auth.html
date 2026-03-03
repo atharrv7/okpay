@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OkPay - Authentication</title>
+    <!-- Tailwind CSS (via CDN) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Custom Tailwind Configuration -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#1ad5e6",
+                        secondary: "#020817",
+                    },
+                    boxShadow: {
+                        'glow-sm': '0 0 10px rgba(26,213,230,0.3)',
+                        'glow-lg': '0 0 20px rgba(26,213,230,0.4)',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #020817;
+            color: #f8fafc;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+        }
+
+        .glass-card {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.01) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+
+        @keyframes fadeIn {
+            0% {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Input specific styles */
+        .input-wrapper {
+            position: relative;
+        }
+
+        .input-field {
+            width: 100%;
+            background-color: rgba(15, 23, 42, 0.4);
+            /* Tailwind slate-900 with opacity */
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #fff;
+            padding: 0.75rem 1rem 0.75rem 2.5rem;
+            border-radius: 0.5rem;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        .input-field:focus {
+            border-color: rgba(26, 213, 230, 0.5);
+            /* Primary color */
+            background-color: rgba(15, 23, 42, 0.6);
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+            /* Tailwind slate-400 */
+        }
+    </style>
+</head>
+
+<body class="relative min-h-screen flex items-center justify-center p-4">
+    <!-- Background Effects -->
+    <div class="absolute inset-0 z-0">
+        <div
+            class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[60%] h-[60%] bg-primary/10 rounded-full blur-[120px]">
+        </div>
+    </div>
+
+    <!-- Error Toast container -->
+    <div id="error-toast"
+        class="absolute -top-16 left-0 right-0 bg-red-500/10 border border-red-500/20 text-red-500 p-3 rounded-lg text-sm flex items-center gap-2 hidden transition-all duration-300 z-20 max-w-md mx-auto">
+        <i data-lucide="alert-circle" class="w-4 h-4"></i>
+        <span id="error-message">Error message goes here</span>
+    </div>
+
+    <div class="relative w-full max-w-md z-10 fade-in">
+        <div class="glass-card p-8 rounded-2xl">
+            <!-- Logo / Header -->
+            <div class="text-center mb-8">
+                <div
+                    class="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-primary mb-4 shadow-glow-lg">
+                    <span class="text-[#020817] font-bold text-2xl">₹</span>
+                </div>
+                <h1 id="header-title"
+                    class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">
+                    Welcome Back
+                </h1>
+                <p id="header-desc" class="text-slate-400 text-sm mt-2">
+                    Securely manage all your payments in one place.
+                </p>
+            </div>
+
+            <!-- Form -->
+            <form id="auth-form" class="space-y-4">
+
+                <!-- Sign Up Exclusives -->
+                <div id="signup-fields" class="hidden space-y-4">
+                    <!-- Role Tabs -->
+                    <div class="flex p-1 bg-slate-900 rounded-lg mb-4">
+                        <button type="button" id="role-personal"
+                            class="flex-1 py-1.5 text-xs font-semibold rounded-md transition-all bg-primary text-[#020817] shadow-glow-sm">
+                            Personal
+                        </button>
+                        <button type="button" id="role-merchant"
+                            class="flex-1 py-1.5 text-xs font-semibold rounded-md transition-all text-slate-400 hover:text-white">
+                            Merchant
+                        </button>
+                    </div>
+
+                    <!-- Name Field -->
+                    <div>
+                        <label class="block text-sm font-medium text-slate-300 mb-1" id="label-name">Full Name</label>
+                        <div class="input-wrapper">
+                            <i data-lucide="user" class="input-icon w-4 h-4"></i>
+                            <input type="text" id="input-name" class="input-field" placeholder="John Doe">
+                        </div>
+                    </div>
+
+                    <!-- Phone Field -->
+                    <div>
+                        <label class="block text-sm font-medium text-slate-300 mb-1">Phone Number</label>
+                        <div class="input-wrapper">
+                            <i data-lucide="user" class="input-icon w-4 h-4"></i>
+                            <input type="text" id="input-phone" class="input-field" placeholder="+91 00000 00000">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Shared Fields -->
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-1">Email Address</label>
+                    <div class="input-wrapper">
+                        <i data-lucide="mail" class="input-icon w-4 h-4"></i>
+                        <input type="email" id="input-email" required class="input-field"
+                            placeholder="name@example.com">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-1">Password</label>
+                    <div class="input-wrapper">
+                        <i data-lucide="lock" class="input-icon w-4 h-4"></i>
+                        <input type="password" id="input-password" required class="input-field" placeholder="••••••••">
+                    </div>
+                </div>
+
+                <div id="forgot-password" class="flex justify-end">
+                    <a href="#" class="text-xs text-primary hover:text-primary/80 transition-colors">
+                        Forgot password?
+                    </a>
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit" id="submit-btn"
+                    class="w-full mt-2 h-11 inline-flex items-center justify-center rounded-lg text-sm font-medium transition-colors bg-primary text-[#020817] hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-[#020817] shadow-glow-sm disabled:opacity-50 disabled:pointer-events-none group">
+                    <span id="submit-text">Sign In</span>
+                    <i data-lucide="arrow-right"
+                        class="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform"></i>
+                </button>
+            </form>
+
+            <!-- Footer Toggle -->
+            <div class="mt-6 text-center">
+                <p class="text-sm text-slate-400">
+                    <span id="toggle-desc">Don't have an account?</span>
+                    <button type="button" id="toggle-btn"
+                        class="text-white font-medium hover:underline focus:outline-none">
+                        Sign Up
+                    </button>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer Branding -->
+    <div class="absolute bottom-6 text-center w-full text-xs text-slate-600 z-10">
+        © 2026 OkPay. Powered by Advanced Payment Tech.
+    </div>
+
+    <script>
+        // Init Lucide Icons
+        lucide.createIcons();
+
+        // State variables
+        let isLogin = true;
+        let role = 'user'; // 'user' or 'merchant'
+
+        // DOM Elements
+        const form = document.getElementById('auth-form');
+        const headerTitle = document.getElementById('header-title');
+        const headerDesc = document.getElementById('header-desc');
+        const signupFields = document.getElementById('signup-fields');
+        const forgotPassword = document.getElementById('forgot-password');
+        const submitText = document.getElementById('submit-text');
+        const submitBtn = document.getElementById('submit-btn');
+        const toggleDesc = document.getElementById('toggle-desc');
+        const toggleBtn = document.getElementById('toggle-btn');
+
+        // Role elements
+        const rolePersonal = document.getElementById('role-personal');
+        const roleMerchant = document.getElementById('role-merchant');
+        const labelName = document.getElementById('label-name');
+        const inputName = document.getElementById('input-name');
+        const inputPhone = document.getElementById('input-phone');
+
+        // Error Toast
+        const errorToast = document.getElementById('error-toast');
+        const errorMessage = document.getElementById('error-message');
+
+        // Functions
+        function toggleMode() {
+            isLogin = !isLogin;
+            hideError();
+
+            if (isLogin) {
+                headerTitle.textContent = "Welcome Back";
+                headerDesc.textContent = "Securely manage all your payments in one place.";
+                signupFields.classList.add('hidden');
+                forgotPassword.classList.remove('hidden');
+                submitText.textContent = "Sign In";
+                toggleDesc.textContent = "Don't have an account?";
+                toggleBtn.textContent = "Sign Up";
+
+                inputName.required = false;
+                inputPhone.required = false;
+            } else {
+                headerTitle.textContent = "Create Account";
+                headerDesc.textContent = "Join OkPay and experience the future of payments.";
+                signupFields.classList.remove('hidden');
+                forgotPassword.classList.add('hidden');
+                submitText.textContent = "Get Started";
+                toggleDesc.textContent = "Already have an account?";
+                toggleBtn.textContent = "Log In";
+
+                inputName.required = true;
+                inputPhone.required = true;
+            }
+        }
+
+        function setRole(newRole) {
+            role = newRole;
+            if (role === 'user') {
+                rolePersonal.className = "flex-1 py-1.5 text-xs font-semibold rounded-md transition-all bg-primary text-[#020817] shadow-glow-sm";
+                roleMerchant.className = "flex-1 py-1.5 text-xs font-semibold rounded-md transition-all text-slate-400 hover:text-white";
+                labelName.textContent = "Full Name";
+                inputName.placeholder = "John Doe";
+            } else {
+                roleMerchant.className = "flex-1 py-1.5 text-xs font-semibold rounded-md transition-all bg-primary text-[#020817] shadow-glow-sm";
+                rolePersonal.className = "flex-1 py-1.5 text-xs font-semibold rounded-md transition-all text-slate-400 hover:text-white";
+                labelName.textContent = "Business Name";
+                inputName.placeholder = "OkPay Pvt Ltd";
+            }
+        }
+
+        function showError(msg) {
+            errorMessage.textContent = msg;
+            errorToast.classList.remove('hidden');
+            // Auto hide after 3 seconds
+            setTimeout(hideError, 3000);
+        }
+
+        function hideError() {
+            errorToast.classList.add('hidden');
+        }
+
+        // Event Listeners
+        toggleBtn.addEventListener('click', toggleMode);
+        rolePersonal.addEventListener('click', () => setRole('user'));
+        roleMerchant.addEventListener('click', () => setRole('merchant'));
+
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            hideError();
+
+            // Simulating API call
+            submitBtn.disabled = true;
+            const originalText = submitText.textContent;
+            submitText.textContent = "Processing...";
+
+            setTimeout(() => {
+                submitBtn.disabled = false;
+                submitText.textContent = originalText;
+
+                // Simple navigation simulation
+                if (role === 'merchant' && !isLogin) {
+                    window.location.href = "dashboard.html"; // In real app goes to /merchant
+                } else {
+                    window.location.href = "dashboard.html";
+                }
+            }, 1000);
+        });
+    </script>
+</body>
+
+</html>
